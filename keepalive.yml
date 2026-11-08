@@ -1,8 +1,8 @@
 # Mencegah "Auto Pause" Supabase (paket gratis: pause setelah 7 hari tanpa aktivitas).
 # Mengakses tabel `settings` tiap 3 hari. Perlu 2 secret di repo GitHub:
 #   Settings > Secrets and variables > Actions > New repository secret
-#     SUPABASE_URL       = https://xxxx.supabase.co
-#     SUPABASE_ANON_KEY  = anon / publishable key
+#     SUPABASE_URL       = https://fpxdwbokmblnbautnwpz.supabase.co
+#     SUPABASE_ANON_KEY  = sb_publishable__kJ6oPjGLoUQKxwOsy34sQ_iidnvgZZ
 name: Supabase Keep Alive
 
 on:
