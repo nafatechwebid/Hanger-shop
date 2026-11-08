@@ -1,0 +1,36 @@
+# Mencegah "Auto Pause" Supabase (paket gratis: pause setelah 7 hari tanpa aktivitas).
+# Mengakses tabel `settings` tiap 3 hari. Perlu 2 secret di repo GitHub:
+#   Settings > Secrets and variables > Actions > New repository secret
+#     SUPABASE_URL       = https://xxxx.supabase.co
+#     SUPABASE_ANON_KEY  = anon / publishable key
+name: Supabase Keep Alive
+
+on:
+  schedule:
+    - cron: "0 3 */3 * *"     # 03:00 UTC (10:00 WIB) setiap 3 hari
+  workflow_dispatch:           # bisa dijalankan manual dari tab Actions
+
+permissions: {}
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_ANON_KEY" ]; then
+            echo "::error::Secret SUPABASE_URL / SUPABASE_ANON_KEY belum diisi"; exit 1
+          fi
+          for i in 1 2 3; do
+            code=$(curl -s -o /tmp/out.json -w "%{http_code}" --max-time 30 \
+              "$SUPABASE_URL/rest/v1/settings?select=id&limit=1" \
+              -H "apikey: $SUPABASE_ANON_KEY" -H "Authorization: Bearer $SUPABASE_ANON_KEY")
+            echo "Percobaan $i: HTTP $code"
+            [ "$code" = "200" ] && { echo "Supabase aktif."; exit 0; }
+            sleep 20
+          done
+          echo "::error::Supabase tidak merespons (mungkin sudah ter-pause). Buka dashboard dan klik Restore project."
+          exit 1
