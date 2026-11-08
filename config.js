@@ -6,8 +6,8 @@
    Biarkan kosong untuk menjalankan MODE DEMO (data contoh, tanpa database).
    ============================================================ */
 window.APP_CONFIG = {
-  SUPABASE_URL: "",
-  SUPABASE_ANON_KEY: "",
+  SUPABASE_URL: "https://fpxdwbokmblnbautnwpz.supabase.co",
+  SUPABASE_ANON_KEY: "sb_publishable__kJ6oPjGLoUQKxwOsy34sQ_iidnvgZZ",
   STORAGE_BUCKET: "store",
   // Batas waktu tunggu database (ms). Project yang ter-pause biasanya tidak merespons.
   REQUEST_TIMEOUT: 9000
