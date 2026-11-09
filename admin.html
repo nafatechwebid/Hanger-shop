@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co; object-src 'none'; base-uri 'self'; form-action 'self'">
+<title>Panel Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;1,500&family=DM+Mono:wght@400;500&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./style.css">
+<link rel="stylesheet" href="./admin.css">
+</head>
+<body>
+<div id="boot" style="position:fixed;inset:0;display:grid;place-items:center;padding:24px;text-align:center;font-family:system-ui,sans-serif;color:#555;z-index:200;background:#f6f3ee">Memuat panel admin…</div>
+<script>
+function bootFail(msg){var b=document.getElementById('boot');if(b){b.innerHTML='<div style="max-width:420px"><b style="color:#b4552d">Panel gagal dimuat</b><p style="margin-top:8px;font-size:14px">'+msg+'</p><p style="margin-top:8px;font-size:12px;color:#888">Perbaiki lalu muat ulang (Ctrl+Shift+R).</p></div>';}}
+window.addEventListener('error',function(e){if(e.target&&e.target.tagName==='SCRIPT'){bootFail('File <code>'+e.target.src.split('/').pop()+'</code> tidak ditemukan atau diblokir. Pastikan sudah diupload ke GitHub dengan nama persis sama.');}else if(e.message){bootFail('Kesalahan: '+e.message);}},true);
+</script>
+<div class="aurora" aria-hidden="true"><i></i><i></i><i></i></div>
+
+<!-- Login -->
+<section id="login" class="login" hidden>
+  <form class="login-card" id="loginForm">
+    <p class="eyebrow">Panel Admin</p>
+    <h1>Masuk</h1>
+    <div class="field"><label for="lEmail">Email</label><input id="lEmail" type="email" required autocomplete="username"></div>
+    <div class="field"><label for="lPass">Kata sandi</label><input id="lPass" type="password" required autocomplete="current-password"></div>
+    <div id="demoHint" class="tip" hidden></div>
+    <div id="lErr" class="stock-note"></div>
+    <button class="btn primary block" type="submit">Masuk</button>
+    <p class="muted small" style="margin-top:16px;text-align:center"><a href="index.html">← Kembali ke toko</a></p>
+  </form>
+</section>
+
+<!-- Demo / belum dikonfigurasi -->
+<section id="noconf" class="login" hidden>
+  <div class="login-card">
+    <p class="eyebrow">Panel Admin</p>
+    <h1>Supabase belum diisi</h1>
+    <p class="muted">Buka <code>./config.js</code>, isi <code>SUPABASE_URL</code> dan <code>SUPABASE_ANON_KEY</code>, lalu muat ulang halaman ini. Ikuti README bagian 2–3.</p>
+    <p style="margin-top:18px"><a class="btn" href="index.html">← Ke toko</a></p>
+  </div>
+</section>
+
+<div id="app" hidden>
+  <header class="ad-top">
+    <b class="brand" style="font-size:22px">Admin</b>
+    <nav class="tabs" id="tabs">
+      <button data-tab="products" class="on">Produk</button>
+      <button data-tab="cats">Variasi</button>
+      <button data-tab="store">Toko &amp; Kontak</button>
+      <button data-tab="pay">Pembayaran</button>
+      <button data-tab="orders">Pesanan</button>
+      <button data-tab="storage">Penyimpanan</button>
+    </nav>
+    <span class="grow"></span>
+    <span id="roleBadge" class="pill"></span>
+    <a class="btn sm" href="index.html" target="_blank" rel="noopener">Lihat toko</a>
+    <button class="btn sm" id="logout">Keluar</button>
+  </header>
+  <div id="warnBar" class="warnbar" hidden></div>
+  <main class="ad-main" id="view"></main>
+</div>
+
+<div class="modal" id="formModal" hidden><div class="form-shell"><button class="close" id="formClose">TUTUP</button><div id="formBody"></div></div></div>
+<div class="toast" id="toast" role="status"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="./config.js"></script>
+<script src="./demo.js"></script>
+<script src="./api.js"></script>
+<script src="./admin.js"></script>
+</body>
+</html>
