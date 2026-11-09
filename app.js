@@ -108,13 +108,40 @@
       const sold = totalStock(p) <= 0;
       return `<button class="hg ${sold ? 'soldout' : ''}" style="--i:${i}" data-id="${esc(p.id)}" aria-label="${esc(p.name)}">
         <span class="hg-sway">
-          <span class="hg-hook"><svg viewBox="0 0 120 62"><path d="M60 24v-6c0-6 9-6 9-13S58-2 53 4" stroke="#6a5a48" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M60 24L8 54h104z" stroke="#6a5a48" stroke-width="3.4" fill="none" stroke-linejoin="round"/></svg></span>
+          <span class="hg-hook"><svg viewBox="0 0 120 62"><path d="M60 24v-6c0-6 9-6 9-13S58-2 53 4" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M60 24L8 54h104z" stroke="currentColor" stroke-width="3.4" fill="none" stroke-linejoin="round"/></svg></span>
           <span class="hg-art"><img class="hg-img" src="${esc(safeUrl(thumb(im)))}" data-full="${esc(safeUrl(im))}" width="300" height="350" alt="" loading="lazy" decoding="async" draggable="false"><span class="hg-tag">${esc(p.name)}${sold ? ' · habis' : ''}</span></span>
           <span class="hg-name">${esc(p.name)}</span><span class="hg-price">${rp(p.price)}</span>
         </span></button>`;
     }).join('');
     track.scrollLeft = 0; $('#rackScroll').scrollLeft = 0;
-    updateArrows();
+    updateArrows(); paintHangers();
+  }
+
+
+  /* Warna hanger otomatis mengikuti warna baju (diambil dari foto; jika gagal, pakai color_hex produk atau warna kayu). */
+  const HC = {};
+  function sampleColor(url, cb) {
+    if (HC[url]) return cb(HC[url]);
+    const im = new Image(); im.crossOrigin = 'anonymous';
+    im.onload = () => {
+      try {
+        const w = 32, h = 32, cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+        const cx = cv.getContext('2d', { willReadFrequently: true }); cx.drawImage(im, 0, 0, w, h);
+        const d = cx.getImageData(0, 0, w, h).data; let r = 0, g = 0, b = 0, n = 0;
+        for (let i = 0; i < d.length; i += 4) if (d[i + 3] > 200) { r += d[i]; g += d[i + 1]; b += d[i + 2]; n++; }
+        if (!n) return;
+        const k = 0.62; // sedikit lebih gelap dari baju supaya hanger tetap terlihat
+        const rgb = 'rgb(' + [r, g, b].map(v => Math.round(v / n * k)).join(',') + ')';
+        HC[url] = rgb; cb(rgb);
+      } catch (e) { /* CORS tidak diizinkan: biarkan warna bawaan */ }
+    };
+    im.src = url;
+  }
+  function paintHangers() {
+    document.querySelectorAll('.hg').forEach(el => {
+      const img = el.querySelector('.hg-img'); if (!img) return;
+      sampleColor(img.currentSrc || img.src, c => el.style.setProperty('--hc', c));
+    });
   }
 
   function updateArrows() {
@@ -156,6 +183,7 @@
     const p = byId(id); if (!p) return;
     V.p = p; V.frame = 0; V.zoom = 1; V.size = null; V.qty = 1;
     const imgs = imgsOf(p); imgs.forEach(u => { const i = new Image(); i.src = u; });
+    { const vh = $('.v-hanger'); if (vh) { vh.style.removeProperty('--hc'); if (imgs[0]) sampleColor(imgs[0], c => vh.style.setProperty('--hc', c)); } }
     const list = visible(); const pos = Math.max(0, list.findIndex(x => String(x.id) === String(id))) + 1;
     const sizes = sizesOf(p), sold = totalStock(p) <= 0;
     $('#vInfo').innerHTML = `
