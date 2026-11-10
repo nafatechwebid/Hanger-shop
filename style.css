@@ -59,7 +59,7 @@ a{color:inherit}
 .burger[aria-expanded="true"] span:last-child{top:20px;transform:rotate(-45deg)}
 
 /* Hero + Rack */
-.stage{padding:clamp(28px,6vh,64px) 0 70px;text-align:center;min-height:calc(100vh - var(--nav-h))}
+.stage{padding:clamp(28px,6vh,64px) 0 24px;text-align:center}
 .eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.32em;text-transform:uppercase;color:var(--gold)}
 .hero-title{font-family:var(--serif);font-weight:400;font-size:clamp(36px,5vw,66px);line-height:1.04;margin:14px auto 26px;max-width:920px;padding:0 16px;letter-spacing:-.01em}
 .hero-title em{font-style:italic}
@@ -69,7 +69,7 @@ a{color:inherit}
 .chip.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 
 .rack{position:relative;margin-top:10px}
-.rack-scroll{overflow-x:auto;overflow-y:visible;scrollbar-width:none;padding:56px 0 90px;margin-top:-50px;scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch}
+.rack-scroll{overflow-x:auto;overflow-y:visible;scrollbar-width:none;padding:56px 0 54px;margin-top:-50px;scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch}
 .rack-scroll::-webkit-scrollbar{display:none}
 .track{position:relative;display:flex;justify-content:safe center;gap:0;min-width:100%;width:max-content;padding:0 clamp(16px,5vw,80px)}
 .track::before{content:"";position:absolute;left:0;right:0;top:6px;height:2px;background:linear-gradient(90deg,transparent,#8b8577 4%,#b9b2a2 50%,#8b8577 96%,transparent);box-shadow:0 3px 6px rgba(0,0,0,.12)}
@@ -100,7 +100,7 @@ a{color:inherit}
 .hg:hover + .hg{transform:translateX(26px)}
 .hg:has(+ .hg:hover){transform:translateX(-26px)}
 @keyframes sway{0%,100%{transform:rotate(-1.8deg)}50%{transform:rotate(1.8deg)}}
-.hint{font-size:12.5px;color:var(--mute);margin-top:-48px;letter-spacing:.02em;padding:0 16px}
+.hint{font-size:12.5px;color:var(--mute);margin-top:-8px;letter-spacing:.02em;padding:0 16px}
 .empty-rack{padding:80px 20px;color:var(--mute)}
 
 .skeleton{position:absolute;inset:0}
@@ -253,7 +253,8 @@ a{color:inherit}
   .hg-tag{display:none}
   .hg-name{display:block;font-size:11.5px;margin-top:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--ink-2)}
   .hg-price{opacity:1;margin-top:2px}
-  .hint{margin-top:-30px}
+  .hint{margin-top:-4px}
+  .about,.contact{padding-block:64px}
 }
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 
