@@ -296,10 +296,15 @@
   $('#checkoutBtn').onclick = () => { closeDrawer(); openCheckout(); };
 
   /* ---------- Checkout ---------- */
-  const C = { step: 1, form: { name: '', phone: '', address: '', note: '' }, tab: 'qris', code: '' };
+  const C = { step: 1, form: { name: '', phone: '', address: '', note: '' }, tab: 'qris', code: '', dest: null, ship: null, destQ: '' };
+  /* Berat perkiraan per produk (gram) menurut jenisnya; simulasi ongkir memakai ini. */
+  function gramOf(p) { const n = (p.name || '').toLowerCase(); return /jaket|jacket|coach|bomber/.test(n) ? 700 : /hoodie/.test(n) ? 600 : /kemeja|shirt/.test(n) && !/t-shirt/.test(n) ? 300 : 250; }
+  const cartGrams = () => cartLines().reduce((s, l) => s + gramOf(l.p) * l.qty, 0);
+  const shipCost = () => (C.ship ? C.ship.cost : 0);
+  const grand = () => cartTotal() + shipCost();
   function openCheckout() {
     if (!cartLines().length) { toast('Keranjang masih kosong'); return; }
-    C.step = 1; C.tab = (S.settings.qris_url ? 'qris' : 'bank');
+    C.step = 1; C.dest = null; C.ship = null; C.destQ = ''; C.tab = (S.settings.qris_url ? 'qris' : 'bank');
     $('#checkout').hidden = false; document.body.style.overflow = 'hidden'; $('#checkout').scrollTop = 0; renderCheckout();
   }
   function closeCheckout() { $('#checkout').hidden = true; document.body.style.overflow = ''; }
@@ -308,7 +313,8 @@
   const steps = (n) => `<div class="steps"><span ${n === 1 ? 'class="x"' : ''}>${n === 1 ? '<b>1 · Data</b>' : '1 · Data'}</span><span>${n === 2 ? '<b>2 · Pembayaran</b>' : '2 · Pembayaran'}</span><span>${n === 3 ? '<b>3 · Selesai</b>' : '3 · Selesai'}</span></div>`;
   function summaryHtml() {
     return cartLines().map(l => `<div class="sum-line"><span>${esc(l.p.name)}<small>${esc(l.size)} × ${l.qty}</small></span><b>${rp(l.p.price * l.qty)}</b></div>`).join('') +
-      `<div class="sum-total"><span>Total</span><span>${rp(cartTotal())}</span></div>`;
+      (C.ship ? `<div class="sum-line"><span>Ongkir<small>${esc(C.ship.courier)} ${esc(C.ship.service)} · ${esc(C.ship.eta)}</small></span><b>${rp(C.ship.cost)}</b></div>` : '') +
+      `<div class="sum-total"><span>Total</span><span>${rp(grand())}</span></div>`;
   }
   function renderCheckout() {
     const el = $('#coBody');
@@ -317,15 +323,33 @@
       <div class="co-grid"><div class="panel"><h4>Data penerima</h4>
         <div class="field"><label for="fName">Nama lengkap</label><input id="fName" autocomplete="name" value="${esc(C.form.name)}"></div>
         <div class="field"><label for="fPhone">Nomor WhatsApp</label><input id="fPhone" inputmode="tel" autocomplete="tel" placeholder="08xxxxxxxxxx" value="${esc(C.form.phone)}"></div>
-        <div class="field"><label for="fAddr">Alamat pengiriman</label><textarea id="fAddr" rows="3" autocomplete="street-address">${esc(C.form.address)}</textarea></div>
+        <div class="field"><label for="fAddr">Alamat lengkap (jalan, nomor, patokan)</label><textarea id="fAddr" rows="3" autocomplete="street-address">${esc(C.form.address)}</textarea></div>
+        <div class="field"><label for="fDest">Kecamatan / kota tujuan</label><input id="fDest" autocomplete="off" placeholder="Ketik, mis. Bandung, Surabaya, Medan" value="${esc(C.destQ)}"><div id="destList" class="dest-list" hidden></div></div>
+        <div id="shipBox"></div>
         <div class="field"><label for="fNote">Catatan (opsional)</label><input id="fNote" value="${esc(C.form.note)}"></div>
         <div class="hp" aria-hidden="true"><label>Website<input id="fHp" tabindex="-1" autocomplete="off"></label></div>
         <div id="fErr" class="stock-note"></div>
         <button class="btn primary block" id="toPay">Lanjut ke pembayaran</button></div>
       <div class="panel"><h4>Ringkasan pesanan</h4>${summaryHtml()}</div></div>`;
+      const showShip = () => {
+        const box = $('#shipBox'); if (!C.dest) { box.innerHTML = ''; return; }
+        const list = window.Ongkir ? window.Ongkir.rates(C.dest.id, cartGrams()) : [];
+        box.innerHTML = `<div class="ship-note">SIMULASI ongkir · asal ${esc(window.Ongkir.origin)} · berat ± ${(cartGrams() / 1000).toFixed(1)} kg. Tarif asli menyusul saat produksi.</div>` +
+          list.map((r, i) => `<label class="ship-opt"><input type="radio" name="ship" value="${i}" ${C.ship && C.ship.code === r.code ? 'checked' : ''}><span><b>${esc(r.courier)} ${esc(r.service)}</b><small>Estimasi ${esc(r.eta)}</small></span><em>${rp(r.cost)}</em></label>`).join('');
+        $$('input[name=ship]', box).forEach(inp => inp.onchange = () => { C.ship = list[+inp.value]; $('#fErr').textContent = ''; const s = $$('.panel', el)[1]; if (s) s.innerHTML = `<h4>Ringkasan pesanan</h4>${summaryHtml()}`; });
+      };
+      const destIn = $('#fDest'), destList = $('#destList');
+      destIn.oninput = () => {
+        C.destQ = destIn.value; C.dest = null; C.ship = null; showShip();
+        const r = window.Ongkir ? window.Ongkir.search(destIn.value) : [];
+        destList.hidden = !r.length;
+        destList.innerHTML = r.map(x => `<button type="button" data-id="${esc(x.id)}">${esc(x.name)}</button>`).join('');
+        $$('button', destList).forEach(b => b.onclick = () => { const x = r.find(y => y.id === b.dataset.id); C.dest = x; C.destQ = x.name; destIn.value = x.name; destList.hidden = true; showShip(); });
+      };
+      if (C.dest) showShip();
       $('#toPay').onclick = () => {
         C.form = { name: $('#fName').value.trim(), phone: $('#fPhone').value.trim(), address: $('#fAddr').value.trim(), note: $('#fNote').value.trim() };
-        const err = !C.form.name ? 'Nama wajib diisi.' : C.form.phone.replace(/\D/g, '').length < 8 ? 'Nomor WhatsApp tidak valid.' : C.form.address.length < 8 ? 'Alamat terlalu singkat.' : '';
+        const err = !C.form.name ? 'Nama wajib diisi.' : C.form.phone.replace(/\D/g, '').length < 8 ? 'Nomor WhatsApp tidak valid.' : C.form.address.length < 8 ? 'Alamat terlalu singkat.' : !C.dest ? 'Pilih kecamatan / kota tujuan dari daftar.' : !C.ship ? 'Pilih kurir pengiriman.' : '';
         if (err) { $('#fErr').textContent = err; return; }
         C.hp = ($('#fHp') || {}).value || ''; C.t0 = Date.now();
         C.step = 2; renderCheckout(); $('#checkout').scrollTop = 0;
@@ -334,7 +358,7 @@
       const qris = safeUrl(S.settings.qris_url);
       const banks = S.banks || [];
       const pane = C.tab === 'qris'
-        ? `<div class="qris">${qris ? `<img src="${esc(qris)}" alt="QRIS toko">` : '<div class="qris-empty">QRIS belum diunggah oleh admin.<br>Gunakan transfer bank.</div>'}</div><p class="muted" style="font-size:13px;text-align:center">Scan dengan aplikasi e-wallet / mobile banking, bayar <b>${rp(cartTotal())}</b>.</p>`
+        ? `<div class="qris">${qris ? `<img src="${esc(qris)}" alt="QRIS toko">` : '<div class="qris-empty">QRIS belum diunggah oleh admin.<br>Gunakan transfer bank.</div>'}</div><p class="muted" style="font-size:13px;text-align:center">Scan dengan aplikasi e-wallet / mobile banking, bayar <b>${rp(grand())}</b>.</p>`
         : (banks.length ? banks.map(b => `<div class="bank"><div><small>${esc(b.bank_name)}</small><span class="no">${esc(b.account_number)}</span><small style="display:block">a.n. ${esc(b.account_name)}</small></div><button class="copy" data-copy="${esc(b.account_number)}">Salin</button></div>`).join('') : '<div class="notice">Data rekening belum diisi admin.</div>');
       el.innerHTML = `<h2>Pembayaran</h2>${steps(2)}
       <div class="co-grid"><div class="panel"><h4>Metode pembayaran</h4>
@@ -343,7 +367,7 @@
         <div id="payErr" class="stock-note"></div>
         <button class="btn primary block" id="paid">Saya sudah membayar</button>
         <button class="btn block" id="back" style="margin-top:10px;border-color:var(--line)">Kembali</button></div>
-      <div class="panel"><h4>Ringkasan pesanan</h4>${summaryHtml()}<div class="notice" style="margin-top:16px;margin-bottom:0">Kirim ke: <b>${esc(C.form.name)}</b><br>${esc(C.form.address)}</div></div></div>`;
+      <div class="panel"><h4>Ringkasan pesanan</h4>${summaryHtml()}<div class="notice" style="margin-top:16px;margin-bottom:0">Kirim ke: <b>${esc(C.form.name)}</b><br>${esc(C.form.address)}<br>${esc(C.dest ? C.dest.name : '')}</div></div></div>`;
       $$('[data-tab]', el).forEach(b => b.onclick = () => { C.tab = b.dataset.tab; renderCheckout(); });
       $$('[data-copy]', el).forEach(b => b.onclick = () => { (navigator.clipboard ? navigator.clipboard.writeText(b.dataset.copy) : Promise.reject()).then(() => toast('Nomor rekening disalin')).catch(() => toast('Salin manual: ' + b.dataset.copy)); });
       $('#back').onclick = () => { C.step = 1; renderCheckout(); };
@@ -351,7 +375,7 @@
     } else {
       const wa = String(S.settings.whatsapp || '').replace(/\D/g, '');
       const lines = cartLinesSnapshot.map(l => `• ${l.name} (${l.size}) x${l.qty} = ${rp(l.price * l.qty)}`).join('\n');
-      const msg = `Halo, saya ingin konfirmasi pembayaran.\nKode pesanan: ${C.code}\nNama: ${C.form.name}\nWA: ${C.form.phone}\nAlamat: ${C.form.address}\n\n${lines}\n\nTotal: ${rp(totalSnapshot)}\nMetode: ${C.tab === 'qris' ? 'QRIS' : 'Transfer bank'}`;
+      const msg = `Halo, saya ingin konfirmasi pembayaran.\nKode pesanan: ${C.code}\nNama: ${C.form.name}\nWA: ${C.form.phone}\nAlamat: ${fullAddr()}\n\n${lines}\n\nOngkir (${shipSnap}): ${rp(shipSnapCost)}\nTotal: ${rp(totalSnapshot)}\nMetode: ${C.tab === 'qris' ? 'QRIS' : 'Transfer bank'}`;
       el.innerHTML = `${steps(3)}<div class="done"><div class="ok">✓</div><h2>Terima kasih, ${esc(C.form.name.split(' ')[0])}!</h2>
         <p class="muted">${C.saved ? 'Pesanan Anda sudah tercatat.' : 'Pesanan belum tersimpan di sistem (database sedang tidur), tetapi Anda bisa mengirim konfirmasi langsung ke admin.'} Kirim bukti pembayaran lewat WhatsApp agar segera diproses.</p>
         <div class="code">${esc(C.code)}</div><br>
@@ -360,7 +384,8 @@
       $('#doneClose').onclick = closeCheckout;
     }
   }
-  let cartLinesSnapshot = [], totalSnapshot = 0;
+  let cartLinesSnapshot = [], totalSnapshot = 0, shipSnap = '', shipSnapCost = 0;
+  const fullAddr = () => C.form.address + (C.dest ? '\n' + C.dest.name : '') + (C.ship ? '\n[Kurir: ' + C.ship.courier + ' ' + C.ship.service + ' · ongkir ' + rp(C.ship.cost) + ' · SIMULASI]' : '');
   async function submitOrder() {
     const btn = $('#paid'); const err = $('#payErr');
     // Penjaga sisi browser (penghalang bot sederhana; penjaga utama ada di database)
@@ -371,12 +396,12 @@
     btn.disabled = true; btn.textContent = 'Memproses…'; err.textContent = '';
     const lines = cartLines();
     cartLinesSnapshot = lines.map(l => ({ id: l.id, name: l.p.name, size: l.size, qty: l.qty, price: l.p.price, color: l.p.color_name || '' }));
-    totalSnapshot = cartTotal();
+    totalSnapshot = grand(); shipSnap = C.ship ? C.ship.courier + ' ' + C.ship.service : '-'; shipSnapCost = shipCost();
     C.code = 'MG-' + Date.now().toString(36).toUpperCase().slice(-6) + Math.random().toString(36).slice(2, 4).toUpperCase();
     C.saved = false;
     try {
       const r = await API.createOrder({
-        order_code: C.code, customer_name: C.form.name, phone: C.form.phone, address: C.form.address, note: C.form.note || null,
+        order_code: C.code, customer_name: C.form.name, phone: C.form.phone, address: fullAddr(), note: C.form.note || null,
         items: cartLinesSnapshot, total: totalSnapshot, payment_method: C.tab === 'qris' ? 'qris' : 'bank'
       });
       C.saved = !!r.ok || !!r.demo;
