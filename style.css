@@ -282,3 +282,20 @@ a.btn{text-decoration:none}
 .ship-opt span{flex:1;min-width:0}.ship-opt b{display:block;font-weight:500;font-size:14px}.ship-opt small{color:var(--mute);font-size:12.5px}
 .ship-opt em{font-style:normal;font-family:var(--mono);font-size:13px}
 #shipBox{margin-bottom:14px}
+
+/* Catatan masa demo, status pesanan, faktur */
+.demo-note{padding:16px 18px;border-radius:14px;background:color-mix(in srgb,var(--gold) 13%,transparent);border:1px dashed color-mix(in srgb,var(--gold) 55%,transparent);font-size:13.5px;color:var(--ink-2);text-align:left;line-height:1.55}
+.demo-note > b:first-child{display:block;color:var(--ink);margin-bottom:4px}
+.demo-note p{margin:4px 0 6px}.demo-note ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px}
+.about .demo-note{max-width:620px;margin:28px auto 0}
+.invoice{padding:20px;border-radius:var(--r);background:var(--card);border:1px solid var(--line)}
+.inv-head{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;font-family:var(--mono);font-size:12px;letter-spacing:.12em;margin-bottom:4px}
+.timeline{list-style:none;margin:0 0 14px;padding:0;display:flex;flex-direction:column;gap:0}
+.timeline li{position:relative;padding:0 0 18px 28px;color:var(--mute)}
+.timeline li::before{content:"";position:absolute;left:5px;top:6px;width:11px;height:11px;border-radius:50%;border:2px solid var(--line);background:var(--bg)}
+.timeline li::after{content:"";position:absolute;left:10px;top:20px;bottom:0;width:1px;background:var(--line)}
+.timeline li:last-child::after{display:none}
+.timeline li.on{color:var(--ink)}.timeline li.on::before{background:var(--ok);border-color:var(--ok)}
+.timeline small{display:block;font-size:12px;color:var(--mute)}
+.resi{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:12px 14px;border-radius:12px;background:color-mix(in srgb,var(--ok) 10%,transparent)}
+.resi small{flex-basis:100%;color:var(--mute)}.resi b{font-family:var(--mono);letter-spacing:.06em;flex:1;overflow-wrap:anywhere}
