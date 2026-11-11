@@ -325,15 +325,34 @@
   }
 
   /* ---------- PESANAN ---------- */
+  /* Pelunasan & resi (simulasi demo: admin menandai manual; versi produksi dilakukan otomatis oleh payment gateway dan API kurir) */
+  const courierOf = (o) => o.courier_name || ((String(o.address || '').match(/\[Kurir: ([^·\]]+?)\s*·/) || [])[1] || '');
+  const fulfil = (o) => `<div class="fulfil">
+      ${o.status === 'menunggu' ? `<button class="btn sm" data-paid="${o.id}">Tandai lunas</button>` : `<span class="pill ok">${o.status === 'batal' ? 'Dibatalkan' : 'Lunas'}</span>`}
+      ${o.status === 'dibayar' || o.status === 'dikirim' || o.status === 'selesai' ? `<div class="resi-row"><input data-courier="${o.id}" placeholder="Kurir" value="${esc(courierOf(o))}"><input data-resi="${o.id}" placeholder="Nomor resi" value="${esc(o.tracking_no || '')}"><button class="btn sm" data-ship="${o.id}">${o.tracking_no ? 'Perbarui resi' : 'Simpan resi & tandai dikirim'}</button></div>` : ''}
+    </div>`;
   async function viewOrders(v) {
     D.orders = await q(sb.from(isOwner() ? 'orders' : 'orders_masked').select('*').order('created_at', { ascending: false }).limit(100));
     v.innerHTML = `<div class="ad-head"><div><h2>Pesanan</h2><p>${D.orders.length} pesanan terakhir. Kurangi stok produk manual setelah pembayaran dikonfirmasi.</p></div><button class="btn sm" id="rf">Muat ulang</button></div>` +
-      (isOwner() ? '' : '<div class="tip">Akun demo melihat data pembeli dalam bentuk <b>tersamar</b> demi privasi, dan tidak dapat mengubah status.</div>') +
+      '<div class="tip">Masa demo: tombol <b>Tandai lunas</b> dan nomor resi diisi manual di sini. Pada versi sungguhan keduanya otomatis, lewat layanan pembayaran digital dan layanan kurir.</div>' + (isOwner() ? '' : '<div class="tip">Akun demo melihat data pembeli dalam bentuk <b>tersamar</b> demi privasi, dan tidak dapat mengubah status.</div>') +
       (D.orders.map(o => `<div class="order"><div class="top"><div><span class="code pill">${esc(o.order_code)}</span> <small class="muted">${new Date(o.created_at).toLocaleString('id-ID')}</small></div>
       ${isOwner() ? `<select data-st="${o.id}">${['menunggu', 'dibayar', 'dikirim', 'selesai', 'batal'].map(s => `<option ${o.status === s ? 'selected' : ''}>${s}</option>`).join('')}</select>` : `<span class="pill">${esc(o.status)}</span>`}</div>
       <dl class="kv"><dt>Pembeli</dt><dd>${esc(o.customer_name)} · ${isOwner() ? `<a href="https://wa.me/${esc(String(o.phone).replace(/\D/g, '').replace(/^0/, '62'))}" target="_blank" rel="noopener">${esc(o.phone)}</a>` : esc(o.phone)}</dd><dt>Alamat</dt><dd>${esc(o.address)}</dd>${o.note ? `<dt>Catatan</dt><dd>${esc(o.note)}</dd>` : ''}<dt>Metode</dt><dd>${esc(o.payment_method || '-')}</dd></dl>
-      <ul>${(o.items || []).map(i => `<li>${esc(i.name)} (${esc(i.size)}) × ${+i.qty} — ${rp(i.price * i.qty)}</li>`).join('')}</ul><b>Total ${rp(o.total)}</b></div>`).join('') || '<p class="muted">Belum ada pesanan.</p>');
+      <ul>${(o.items || []).map(i => `<li>${esc(i.name)} (${esc(i.size)}) × ${+i.qty} — ${rp(i.price * i.qty)}</li>`).join('')}</ul><b>Total ${rp(o.total)}</b>
+      ${isOwner() ? fulfil(o) : (o.tracking_no ? `<p class="small muted">Resi: ${esc(o.courier_name || '')} ${esc(o.tracking_no)}</p>` : '')}</div>`).join('') || '<p class="muted">Belum ada pesanan.</p>');
     $('#rf').onclick = render;
+    v.onclick = async (e) => {
+      const p = e.target.closest('[data-paid]'), sh = e.target.closest('[data-ship]'); if (!isOwner() || !(p || sh)) return;
+      try {
+        if (p) { await q(sb.from('orders').update({ status: 'dibayar', paid_at: new Date().toISOString() }).eq('id', p.dataset.paid)); toast('Pembayaran ditandai lunas'); }
+        else {
+          const id = sh.dataset.ship, resi = $(`[data-resi="${id}"]`).value.trim(), kur = $(`[data-courier="${id}"]`).value.trim();
+          if (resi.length < 5) { toast('Isi nomor resi dengan benar'); return; }
+          await q(sb.from('orders').update({ status: 'dikirim', tracking_no: resi, courier_name: kur || null, shipped_at: new Date().toISOString() }).eq('id', id)); toast('Resi tersimpan, status dikirim');
+        }
+        render();
+      } catch (err) { dbErr(err); }
+    };
     v.onchange = async (e) => { const s = e.target.closest('[data-st]'); if (s && isOwner()) { try { await q(sb.from('orders').update({ status: s.value }).eq('id', s.dataset.st)); toast('Status diperbarui'); } catch (err) { dbErr(err); } } };
   }
 
