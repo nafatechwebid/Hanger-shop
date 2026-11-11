@@ -295,6 +295,20 @@
   $('#cartBtn').onclick = openDrawer; $('#drawerClose').onclick = closeDrawer; $('#drawerBack').onclick = closeDrawer;
   $('#checkoutBtn').onclick = () => { closeDrawer(); openCheckout(); };
 
+  /* ---------- Catatan masa demo (bahasa awam) ---------- */
+  const demoNoteHtml = () => `<b>Toko ini masih dalam masa percobaan (demo)</b>
+    <p>Beberapa fitur di bawah ini baru berupa contoh tampilan, belum berjalan sungguhan:</p>
+    <ul>
+      <li><b>Ongkos kirim otomatis</b> sesuai alamat pembeli. Versi sungguhan memerlukan layanan cek ongkos kirim otomatis (berlangganan, dibayar per tahun).</li>
+      <li><b>Pembayaran yang langsung tercatat lunas.</b> Versi sungguhan memerlukan layanan pembayaran digital (tanpa biaya langganan, pembayaran dilakukan sendiri oleh pelanggan).</li>
+      <li><b>Faktur dan nomor resi yang terkirim sendiri</b> ke WhatsApp atau email. Saat ini hanya tampil di layar sebagai contoh, belum benar-benar terkirim.</li>
+    </ul>`;
+  { const n = $('#aboutDemoNote'); if (n) n.innerHTML = demoNoteHtml(); }
+
+  /* ---------- Pesanan saya (disimpan di perangkat ini, untuk mengisi form Cek Pesanan) ---------- */
+  const myOrders = () => { try { return JSON.parse(localStorage.getItem('my_orders')) || []; } catch (e) { return []; } };
+  const saveMyOrder = (o) => { try { localStorage.setItem('my_orders', JSON.stringify([o, ...myOrders().filter(x => x.order_code !== o.order_code)].slice(0, 5))); } catch (e) { } };
+
   /* ---------- Checkout ---------- */
   const C = { step: 1, form: { name: '', phone: '', address: '', note: '' }, tab: 'qris', code: '', dest: null, ship: null, destQ: '' };
   /* Berat perkiraan per produk (gram) menurut jenisnya; simulasi ongkir memakai ini. */
@@ -330,11 +344,11 @@
         <div class="hp" aria-hidden="true"><label>Website<input id="fHp" tabindex="-1" autocomplete="off"></label></div>
         <div id="fErr" class="stock-note"></div>
         <button class="btn primary block" id="toPay">Lanjut ke pembayaran</button></div>
-      <div class="panel"><h4>Ringkasan pesanan</h4>${summaryHtml()}</div></div>`;
+      <div><div class="panel"><h4>Ringkasan pesanan</h4>${summaryHtml()}</div><div class="demo-note" style="margin-top:16px">${demoNoteHtml()}</div></div></div>`;
       const showShip = () => {
         const box = $('#shipBox'); if (!C.dest) { box.innerHTML = ''; return; }
         const list = window.Ongkir ? window.Ongkir.rates(C.dest.id, cartGrams()) : [];
-        box.innerHTML = `<div class="ship-note">SIMULASI ongkir · asal ${esc(window.Ongkir.origin)} · berat ± ${(cartGrams() / 1000).toFixed(1)} kg. Tarif asli menyusul saat produksi.</div>` +
+        box.innerHTML = `<div class="ship-note">Contoh ongkos kirim (masa percobaan) · dikirim dari ${esc(window.Ongkir.origin)} · berat sekitar ${(cartGrams() / 1000).toFixed(1)} kg.</div>` +
           list.map((r, i) => `<label class="ship-opt"><input type="radio" name="ship" value="${i}" ${C.ship && C.ship.code === r.code ? 'checked' : ''}><span><b>${esc(r.courier)} ${esc(r.service)}</b><small>Estimasi ${esc(r.eta)}</small></span><em>${rp(r.cost)}</em></label>`).join('');
         $$('input[name=ship]', box).forEach(inp => inp.onchange = () => { C.ship = list[+inp.value]; $('#fErr').textContent = ''; const s = $$('.panel', el)[1]; if (s) s.innerHTML = `<h4>Ringkasan pesanan</h4>${summaryHtml()}`; });
       };
@@ -380,8 +394,10 @@
         <p class="muted">${C.saved ? 'Pesanan Anda sudah tercatat.' : 'Pesanan belum tersimpan di sistem (database sedang tidur), tetapi Anda bisa mengirim konfirmasi langsung ke admin.'} Kirim bukti pembayaran lewat WhatsApp agar segera diproses.</p>
         <div class="code">${esc(C.code)}</div><br>
         ${wa ? `<a class="btn wa" target="_blank" rel="noopener" href="https://wa.me/${wa}?text=${encodeURIComponent(msg)}">Konfirmasi via WhatsApp</a>` : '<p class="muted">Nomor WhatsApp admin belum diisi.</p>'}
-        <p style="margin-top:20px"><button class="btn" id="doneClose">Tutup</button></p></div>`;
+        <p style="margin-top:20px"><button class="btn primary" id="doneTrack">Lihat status &amp; faktur pesanan</button> <button class="btn" id="doneClose">Tutup</button></p>
+        <div class="demo-note" style="max-width:560px;margin:26px auto 0;text-align:left">${demoNoteHtml()}</div></div>`;
       $('#doneClose').onclick = closeCheckout;
+      $('#doneTrack').onclick = () => { closeCheckout(); openTrack(C.code, C.form.phone, true); };
     }
   }
   let cartLinesSnapshot = [], totalSnapshot = 0, shipSnap = '', shipSnapCost = 0;
@@ -412,9 +428,53 @@
       C.saved = false;   // database tidur: tetap bisa konfirmasi lewat WhatsApp
     }
     try { localStorage.setItem('ord_t', JSON.stringify([...recent, Date.now()])); } catch (e) { }
+    saveMyOrder({ order_code: C.code, phone: C.form.phone, customer_name: C.form.name, items: cartLinesSnapshot, total: totalSnapshot, address: fullAddr(), payment_method: C.tab === 'qris' ? 'qris' : 'bank', status: 'menunggu', created_at: new Date().toISOString(), ship: shipSnap, ship_cost: shipSnapCost });
     S.cart = []; saveCart(); updateCart();
     C.step = 3; renderCheckout(); $('#checkout').scrollTop = 0;
   }
+
+  /* ---------- Cek pesanan: status, faktur, nomor resi ---------- */
+  const STEPS = [['menunggu', 'Pesanan diterima'], ['dibayar', 'Pembayaran lunas'], ['dikirim', 'Dikirim dengan kurir'], ['selesai', 'Pesanan selesai']];
+  function invoiceHtml(o) {
+    const sub = (o.items || []).reduce((s, i) => s + i.price * i.qty, 0), ship = Math.max(0, (+o.total || 0) - sub);
+    return `<div class="invoice"><div class="inv-head"><b>FAKTUR (CONTOH)</b><span>${esc(o.order_code)}</span></div>
+      <small>${new Date(o.created_at).toLocaleString('id-ID')} · ${esc(o.customer_name)}</small>
+      ${(o.items || []).map(i => `<div class="sum-line"><span>${esc(i.name)}<small>${esc(i.size)} × ${+i.qty}</small></span><b>${rp(i.price * i.qty)}</b></div>`).join('')}
+      <div class="sum-line"><span>Ongkos kirim</span><b>${rp(ship)}</b></div>
+      <div class="sum-total"><span>Total</span><span>${rp(o.total)}</span></div>
+      <p class="muted" style="font-size:12.5px;margin-top:10px">Pada versi sungguhan, faktur ini terkirim otomatis ke WhatsApp atau email pembeli begitu pembayaran lunas.</p></div>`;
+  }
+  function trackResultHtml(o) {
+    const idx = o.status === 'batal' ? -1 : Math.max(0, STEPS.findIndex(s => s[0] === o.status));
+    const when = (k) => k === 'menunggu' ? o.created_at : k === 'dibayar' ? o.paid_at : k === 'dikirim' ? o.shipped_at : null;
+    const tl = o.status === 'batal' ? '<div class="notice">Pesanan ini dibatalkan.</div>' : `<ol class="timeline">${STEPS.map((s, i) => `<li class="${i <= idx ? 'on' : ''}"><b>${s[1]}</b><small>${i <= idx && when(s[0]) ? new Date(when(s[0])).toLocaleString('id-ID') : (i <= idx ? '' : 'Belum')}</small></li>`).join('')}</ol>`;
+    const resi = o.tracking_no ? `<div class="resi"><small>Nomor resi${o.courier_name ? ' · ' + esc(o.courier_name) : ''}</small><b>${esc(o.tracking_no)}</b><button class="copy" data-copy="${esc(o.tracking_no)}">Salin</button></div>` : (idx >= 1 ? '<div class="notice">Pesanan sedang dikemas. Nomor resi akan muncul di sini setelah barang diserahkan ke kurir.</div>' : '');
+    return `<div class="panel"><h4>Status pesanan</h4>${tl}${resi}</div><div style="margin-top:16px">${invoiceHtml(o)}</div>`;
+  }
+  async function runTrack(code, phone) {
+    const out = $('#trOut'); out.innerHTML = '<p class="muted">Memeriksa…</p>';
+    code = String(code || '').trim().toUpperCase();
+    try {
+      const r = await API.trackOrder(code, phone); let o = r.order || null;
+      if (r.demo) { o = myOrders().find(x => x.order_code === code && String(x.phone).replace(/\D/g, '').slice(-8) === String(phone).replace(/\D/g, '').slice(-8)) || null; }
+      if (!o) { out.innerHTML = '<div class="notice">Pesanan tidak ditemukan. Periksa kode pesanan dan nomor WhatsApp yang dipakai saat memesan.</div>'; return; }
+      out.innerHTML = trackResultHtml(o);
+      $$('[data-copy]', out).forEach(b => b.onclick = () => { (navigator.clipboard ? navigator.clipboard.writeText(b.dataset.copy) : Promise.reject()).then(() => toast('Nomor resi disalin')).catch(() => toast('Salin manual: ' + b.dataset.copy)); });
+    } catch (e) { out.innerHTML = `<div class="notice">${e.paused ? 'Sistem sedang beristirahat. Coba lagi beberapa menit lagi.' : esc(e.message || 'Gagal memeriksa pesanan.')}</div>`; }
+  }
+  function openTrack(code, phone, auto) {
+    const last = myOrders()[0] || {};
+    $('#trackModal').hidden = false; document.body.style.overflow = 'hidden'; $('#trackModal').scrollTop = 0;
+    $('#trBody').innerHTML = `<h2>Cek Pesanan</h2><p class="muted" style="margin-bottom:18px">Masukkan kode pesanan dan nomor WhatsApp yang dipakai saat memesan.</p>
+      <div class="co-grid"><div><div class="panel"><div class="field"><label for="trCode">Kode pesanan</label><input id="trCode" autocomplete="off" value="${esc(code || last.order_code || '')}" placeholder="MG-XXXXXX"></div>
+      <div class="field"><label for="trPhone">Nomor WhatsApp</label><input id="trPhone" inputmode="tel" value="${esc(phone || last.phone || '')}" placeholder="08xxxxxxxxxx"></div>
+      <button class="btn primary block" id="trGo">Periksa</button></div><div class="demo-note" style="margin-top:16px">${demoNoteHtml()}</div></div><div id="trOut"></div></div>`;
+    $('#trGo').onclick = () => runTrack($('#trCode').value, $('#trPhone').value);
+    if (auto || (code && phone)) runTrack(code, phone);
+  }
+  const closeTrack = () => { $('#trackModal').hidden = true; document.body.style.overflow = ''; };
+  $('#trClose').onclick = closeTrack;
+  $('#trackLink').onclick = (e) => { e.preventDefault(); openTrack(); };
 
   /* ---------- Scroll spy sederhana ---------- */
   const spy = new IntersectionObserver((en) => en.forEach(e => { if (e.isIntersecting) $$('[data-nav]').forEach(a => a.classList.toggle('active', a.dataset.nav === e.target.id)); }), { rootMargin: '-45% 0px -50% 0px' });
