@@ -328,3 +328,25 @@ body{font-size:16px}
 .foot{font-family:var(--sans);font-size:15.5px;line-height:2.1;letter-spacing:.02em;color:var(--ink-2);padding:40px 16px 56px}
 .foot span{color:var(--ink);font-weight:500}
 .foot a{color:var(--ink);font-weight:500;padding:6px 2px;border-bottom:1.5px solid var(--gold)}
+
+/* ============================================================
+   PERBAIKAN TAHAP 2: samakan lebar navbar, rak baju, Tentang Kami,
+   dan Hubungi Kami supaya garis kiri-kanannya sejajar.
+   ============================================================ */
+:root{--wrap:1040px;--col:620px}
+
+/* Navbar: logo dan menu mengikuti lebar kolom yang sama */
+.nav{padding-inline:max(16px,calc((100% - var(--wrap))/2))}
+
+/* Rak baju: dibatasi lebar yang sama, ujungnya memudar halus */
+.rack{max-width:var(--wrap);margin-inline:auto}
+.rack-scroll{-webkit-mask-image:linear-gradient(90deg,transparent,#000 28px,#000 calc(100% - 28px),transparent);mask-image:linear-gradient(90deg,transparent,#000 28px,#000 calc(100% - 28px),transparent)}
+
+/* Tentang Kami + Hubungi Kami: satu lebar kolom */
+.about-inner,.contact-inner{max-width:var(--col);width:100%}
+.contact-cards{grid-template-columns:repeat(2,minmax(0,1fr))}
+.c-card{min-width:0}
+.c-card span{word-break:normal;overflow-wrap:anywhere}
+@media (max-width:480px){
+  .contact-cards{grid-template-columns:1fr}
+}
