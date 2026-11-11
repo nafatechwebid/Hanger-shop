@@ -65,6 +65,13 @@
     return { ok: true };
   }
 
+  async function trackOrder(code, phone) {
+    if (!live) return { demo: true };
+    const res = await withTimeout(sb.rpc('track_order', { p_code: code, p_phone: phone }), TIMEOUT);
+    if (res.error) { const e = new Error(res.error.message); e.paused = looksPaused(res.error); throw e; }
+    return { ok: true, order: res.data };
+  }
+
   async function ping() {
     if (!live) return { ok: false, reason: 'demo' };
     const t0 = performance.now();
@@ -74,5 +81,5 @@
     } catch (e) { return { ok: false, paused: !!e.paused, reason: e.message }; }
   }
 
-  window.API = { live, sb, cfg, loadStore, createOrder, ping, looksPaused, q, withTimeout, check };
+  window.API = { live, sb, cfg, loadStore, createOrder, trackOrder, ping, looksPaused, q, withTimeout, check };
 })();
