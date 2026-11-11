@@ -299,3 +299,32 @@ a.btn{text-decoration:none}
 .timeline small{display:block;font-size:12px;color:var(--mute)}
 .resi{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:12px 14px;border-radius:12px;background:color-mix(in srgb,var(--ok) 10%,transparent)}
 .resi small{flex-basis:100%;color:var(--mute)}.resi b{font-family:var(--mono);letter-spacing:.06em;flex:1;overflow-wrap:anywhere}
+
+/* ============================================================
+   PERBAIKAN (ditambahkan): cegah halaman melebar, lebar seragam,
+   huruf lebih jelas. Taruh di paling bawah file.
+   ============================================================ */
+
+/* 1. Cegah halaman melebar melebihi layar HP */
+html{overflow-x:hidden;width:100%}
+body{overflow-x:clip;width:100%;position:relative}
+.drawer{visibility:hidden;transition:transform .38s cubic-bezier(.2,.8,.2,1),visibility 0s .38s}
+.drawer.open{visibility:visible;transition-delay:0s}
+
+/* 2. Lebar seragam di bagian Tentang Kami */
+.about-inner{max-width:620px}
+.about-text,.about .demo-note,.demo-card{width:100%;max-width:620px;margin-left:auto;margin-right:auto}
+
+/* 3. Huruf lebih jelas */
+body{font-size:16px}
+.eyebrow{font-size:12.5px}
+.hint{font-size:14px;color:var(--ink-2)}
+.about-text p{font-size:17px;line-height:1.7}
+.demo-note{font-size:15px}
+.cred span{font-size:11.5px}
+.contact-cards{grid-template-columns:repeat(auto-fit,minmax(min(230px,100%),1fr))}
+
+/* 4. Footer lebih jelas */
+.foot{font-family:var(--sans);font-size:15.5px;line-height:2.1;letter-spacing:.02em;color:var(--ink-2);padding:40px 16px 56px}
+.foot span{color:var(--ink);font-weight:500}
+.foot a{color:var(--ink);font-weight:500;padding:6px 2px;border-bottom:1.5px solid var(--gold)}
