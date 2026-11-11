@@ -73,3 +73,7 @@ code{font-family:var(--mono);font-size:.9em;background:color-mix(in srgb,var(--i
 .bar em{font-style:normal;font-family:var(--mono);font-size:12px;text-align:right}
 .checks{margin-left:18px;line-height:1.75}
 @media(max-width:600px){.bar{grid-template-columns:100px 1fr 60px}}
+
+.fulfil{display:flex;flex-direction:column;gap:10px;margin-top:12px;padding-top:12px;border-top:1px dashed var(--line);align-items:flex-start}
+.resi-row{display:flex;gap:8px;flex-wrap:wrap;width:100%}
+.resi-row input{flex:1 1 130px;min-width:0;padding:9px 12px;border:1px solid var(--line);border-radius:10px;background:transparent;color:var(--ink);font:inherit}
