@@ -90,6 +90,7 @@
       <p class="eyebrow">Cerita Kami</p>
       <h2 id="aboutTitle">Tentang Kami</h2>
       <div id="aboutText" class="about-text"></div>
+      <div class="demo-note" id="aboutDemoNote"></div>
       <div id="demoCard" class="demo-card" hidden>
         <p class="eyebrow">Akun Demo</p>
         <h3>Coba Panel Admin</h3>
@@ -122,7 +123,7 @@
 
 <footer class="foot">
   <span id="footName">Maison Gantung</span> · <span id="year"></span>
-  · <a href="admin.html">Admin</a>
+  · <a href="#" id="trackLink">Cek Pesanan</a> · <a href="admin.html">Admin</a>
 </footer>
 
 <!-- Viewer produk -->
@@ -164,6 +165,11 @@
     <button class="close" id="coClose">TUTUP</button>
     <div id="coBody"></div>
   </div>
+</div>
+
+<!-- Cek pesanan -->
+<div class="modal" id="trackModal" hidden aria-modal="true" role="dialog">
+  <div class="co-shell"><button class="close" id="trClose">TUTUP</button><div id="trBody"></div></div>
 </div>
 
 <div class="toast" id="toast" role="status"></div>
