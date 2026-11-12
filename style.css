@@ -350,3 +350,40 @@ body{font-size:16px}
 @media (max-width:480px){
   .contact-cards{grid-template-columns:1fr}
 }
+
+/* ============================================================
+   PERBAIKAN TAHAP 3: satu lebar kolom untuk SEMUA bagian
+   (navbar, logo, menu, rak baju, tentang, kontak)
+   ============================================================ */
+:root{--col:680px}
+
+/* Navbar: logo di tepi kiri kolom, keranjang di tepi kanan kolom */
+.nav{padding-inline:max(16px,calc((100% - var(--col))/2));gap:12px;max-width:100%;overflow-x:clip}
+.menu>a,.dd-btn{padding:8px 10px}
+.brand{flex:0 0 auto}
+.cart-btn{flex:0 0 auto}
+
+/* Rak baju: lebar kolom sama */
+.rack{max-width:var(--col);margin-inline:auto}
+
+/* Tentang + Kontak + kartu demo: lebar kolom sama, jarak tepi sama */
+.about,.contact{padding-inline:16px}
+.about-inner,.contact-inner{max-width:var(--col);width:100%}
+.about-text,.about .demo-note,.demo-card{max-width:var(--col)}
+
+/* ============================================================
+   PERBAIKAN TAHAP 4: paragraf "Tentang Kami" rapi & enak dibaca
+   ============================================================ */
+.about-text{max-width:34em;margin-inline:auto}
+.about-text p{
+  text-wrap:balance;            /* baris diseimbangkan, tidak ada baris pendek menggantung */
+  line-height:1.75;
+  margin-bottom:1.25em;
+  hyphens:none;
+  overflow-wrap:break-word;
+}
+.about-text p:first-child{font-size:1.06em;color:var(--ink)}   /* paragraf pembuka sedikit lebih menonjol */
+.about h2,.contact h2{text-wrap:balance}
+.hero-title{text-wrap:balance}
+.contact-inner > .muted{text-wrap:balance;max-width:30em;margin-inline:auto}
+.demo-note p,.demo-note li{text-wrap:pretty}
