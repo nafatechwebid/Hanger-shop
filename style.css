@@ -387,3 +387,25 @@ body{font-size:16px}
 .hero-title{text-wrap:balance}
 .contact-inner > .muted{text-wrap:balance;max-width:30em;margin-inline:auto}
 .demo-note p,.demo-note li{text-wrap:pretty}
+
+/* ============================================================
+   PERBAIKAN TAHAP 5: paragraf "Tentang Kami" rata kiri-kanan
+   (seperti contoh), tepi sejajar dengan kotak demo di bawahnya
+   ============================================================ */
+.about-text{max-width:100%;width:100%;margin-inline:auto}
+.about-text p{
+  text-align:justify;
+  text-align-last:left;        /* baris terakhir rata kiri, seperti contoh */
+  text-justify:inter-word;
+  text-indent:1.8em;           /* awal paragraf menjorok */
+  text-wrap:pretty;            /* ganti 'balance' agar baris penuh sampai tepi */
+  hyphens:auto;
+  -webkit-hyphens:auto;
+  line-height:1.8;
+  margin-bottom:1.1em;
+  color:var(--ink-2);
+}
+.about-text p:first-child{font-size:1em;color:var(--ink-2)}
+@media (max-width:480px){
+  .about-text p{text-indent:1.4em;line-height:1.75;font-size:16px}
+}
